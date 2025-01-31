@@ -1,5 +1,5 @@
 // scanner.js
-import Instascan from 'instascan';
+import Instascan from '@zxing/library';
 export default class Scanner {
     constructor(videoElement, onScan) {
         this.video = videoElement; // Элемент <video> для отображения камеры
