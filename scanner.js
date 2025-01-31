@@ -1,62 +1,93 @@
 export default class Scanner {
     constructor(videoElement, onScan) {
-        this.video = videoElement; // Элемент <video> для отображения камеры
-        this.onScan = onScan; // Колбэк, который вызывается при успешном сканировании
-        this.canvas = document.createElement('canvas'); // Canvas для обработки изображения
-        this.context = this.canvas.getContext('2d'); // Контекст canvas
-        this.isScanning = false; // Флаг для отслеживания состояния сканирования
-    }
-
-    // Инициализация сканера
-    async init() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            throw new Error('Ваш браузер не поддерживает доступ к камере.');
-        }
-
-        // Запрашиваем доступ к камере
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        this.video.srcObject = stream;
-        await this.video.play(); // Запускаем видео
-    }
-
-    // Запуск сканирования
-    start() {
-        if (this.isScanning) return; // Если сканирование уже запущено, выходим
-
-        this.isScanning = true;
-        this.scanFrame(); // Запускаем цикл сканирования
-    }
-
-    // Остановка сканирования
-    stop() {
+        this.video = videoElement;
+        this.onScan = onScan;
+        this.canvas = document.createElement('canvas');
+        this.context = this.canvas.getContext('2d');
         this.isScanning = false;
     }
 
-    // Цикл сканирования
-    scanFrame() {
-        if (!this.isScanning) return; // Если сканирование остановлено, выходим
-
-        // Устанавливаем размеры canvas равными размеру видео
-        this.canvas.width = this.video.videoWidth;
-        this.canvas.height = this.video.videoHeight;
-
-        // Рисуем текущий кадр видео на canvas
-        this.context.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
-
-        // Получаем данные изображения с canvas
-        const imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
-
-        // Используем jsQR для распознавания QR-кода
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: 'dontInvert',
-        });
-
-        // Если QR-код распознан, вызываем колбэк
-        if (code) {
-            this.onScan(code.data); // Передаем данные из QR-кода
+    async init() {
+        console.log('[Scanner] Инициализация...');
+        if (!navigator.mediaDevices?.getUserMedia) {
+            throw new Error('Ваш браузер не поддерживает доступ к камере.');
         }
 
-        // Рекурсивно вызываем scanFrame для следующего кадра
+        try {
+            // Запрос доступа к камере
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment', // Используем заднюю камеру
+                    width: { ideal: 1280 }, // Оптимальное разрешение
+                    height: { ideal: 720 }
+                }
+            });
+            this.video.srcObject = stream;
+            
+            // Ждем, пока видео начнет воспроизводиться
+            await new Promise((resolve) => {
+                this.video.onloadedmetadata = resolve;
+            });
+            await this.video.play().catch((error) => {
+                console.error('[Scanner] Ошибка воспроизведения видео:', error);
+            });
+            console.log('[Scanner] Камера готова.');
+        } catch (error) {
+            console.error('[Scanner] Ошибка инициализации:', error);
+            throw error;
+        }
+    }
+
+    start() {
+        if (this.isScanning) return;
+        console.log('[Scanner] Сканирование запущено.');
+        this.isScanning = true;
+        this.scanFrame(); // Начинаем цикл сканирования
+    }
+
+    stop() {
+        console.log('[Scanner] Сканирование остановлено.');
+        this.isScanning = false;
+    }
+
+    scanFrame() {
+        if (!this.isScanning) return;
+
+        try {
+            // Проверяем, что видео доступно
+            if (this.video.readyState < HTMLMediaElement.HAVE_METADATA) {
+                console.warn('[Scanner] Видео не готово.');
+                requestAnimationFrame(() => this.scanFrame());
+                return;
+            }
+
+            // Настраиваем canvas
+            this.canvas.width = this.video.videoWidth;
+            this.canvas.height = this.video.videoHeight;
+            this.context.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+
+            // Получаем данные изображения
+            const imageData = this.context.getImageData(
+                0,
+                0,
+                this.canvas.width,
+                this.canvas.height
+            );
+
+            // Распознаем QR-код
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert',
+            });
+
+            if (code) {
+                console.log('[Scanner] QR-код распознан:', code.data);
+                this.onScan(code.data);
+            }
+        } catch (error) {
+            console.error('[Scanner] Ошибка обработки кадра:', error);
+        }
+
+        // Запускаем следующий кадр
         requestAnimationFrame(() => this.scanFrame());
     }
 }
