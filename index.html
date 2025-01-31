@@ -10,8 +10,13 @@
 <body>
     <div class="container">
         <h1>Сканер чеков</h1>
+        <!-- Видео для отображения потока с камеры -->
         <video id="preview" width="100%"></video>
+        <!-- Кнопка для запуска сканирования -->
         <button id="scanButton">Сканировать</button>
+        <!-- Блок для вывода ошибок -->
+        <div id="error" style="color: red; margin-top: 10px;"></div>
+        <!-- Блок для вывода результатов -->
         <div id="output">
             <table id="productTable">
                 <thead>
@@ -26,7 +31,10 @@
             </table>
         </div>
     </div>
+
+    <!-- Подключаем библиотеку Instascan для работы с QR-кодами -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Instascan/1.0.0/instascan.min.js"></script>
+    <!-- Подключаем основной скрипт приложения -->
     <script src="app.js"></script>
 </body>
 </html>
