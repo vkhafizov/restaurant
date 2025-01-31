@@ -1,4 +1,11 @@
 // scanner.js
+
+const statusMessage = document.createElement('div');
+statusMessage.id = 'scanner-status';
+statusMessage.style.cssText = 'padding: 10px; background: #f0f0f0; margin: 10px 0; border-radius: 4px;';
+statusMessage.textContent = 'Инициализация сканера QR-кодов...';
+document.body.insertBefore(statusMessage, document.body.firstChild);
+
 import Instascan from '@zxing/library';
 export default class Scanner {
     constructor(videoElement, onScan) {
