@@ -1,31 +1,45 @@
-document.getElementById('scanButton').addEventListener('click', () => {
-    const fileInput = document.getElementById('fileInput');
-    const output = document.getElementById('output');
+document.addEventListener('DOMContentLoaded', () => {
+    const scanButton = document.getElementById('scanButton');
+    const preview = document.getElementById('preview');
+    const productTableBody = document.querySelector('#productTable tbody');
 
-    if (fileInput.files.length === 0) {
-        alert('Пожалуйста, выберите изображение чека.');
-        return;
-    }
+    let scanner = new Instascan.Scanner({ video: preview });
 
-    const file = fileInput.files[0];
-    const reader = new FileReader();
+    scanner.addListener('scan', function (content) {
+        // Предполагаем, что QR-код содержит данные в формате "название:цена"
+        const products = content.split('\n').map(line => {
+            const [name, price] = line.split(':');
+            return { name, price };
+        });
 
-    reader.onload = function(e) {
-        const image = new Image();
-        image.src = e.target.result;
+        // Очищаем таблицу перед добавлением новых данных
+        productTableBody.innerHTML = '';
 
-        image.onload = function() {
-            Tesseract.recognize(
-                image,
-                'rus',
-                {
-                    logger: m => console.log(m)
-                }
-            ).then(({ data: { text } }) => {
-                output.innerHTML = `<pre>${text}</pre>`;
-            });
-        };
-    };
+        // Добавляем данные в таблицу
+        products.forEach(product => {
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            const priceCell = document.createElement('td');
 
-    reader.readAsDataURL(file);
+            nameCell.textContent = product.name;
+            priceCell.textContent = product.price;
+
+            row.appendChild(nameCell);
+            row.appendChild(priceCell);
+            productTableBody.appendChild(row);
+        });
+    });
+
+    scanButton.addEventListener('click', () => {
+        Instascan.Camera.getCameras().then(function (cameras) {
+            if (cameras.length > 0) {
+                scanner.start(cameras[0]);
+            } else {
+                alert('Камера не найдена.');
+            }
+        }).catch(function (e) {
+            console.error(e);
+            alert('Ошибка при доступе к камере.');
+        });
+    });
 });
