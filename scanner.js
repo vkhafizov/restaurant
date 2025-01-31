@@ -8,12 +8,16 @@ export default class Scanner {
     }
 
     // Инициализация сканера
-    init() {
+    async init() {
         if (!Instascan) {
             throw new Error('Библиотека Instascan не загружена.');
         }
 
-        this.scanner = new Instascan.Scanner({ video: this.video });
+        // Initialize scanner before starting
+        this.scanner = new Instascan.Scanner({ 
+            video: this.video,
+            scanPeriod: 5 // Scan every 5ms for better response
+        });
 
         // Обработчик успешного сканирования
         this.scanner.addListener('scan', (content) => {
@@ -21,22 +25,39 @@ export default class Scanner {
                 this.onScan(content); // Вызываем колбэк с отсканированными данными
             }
         });
+
+        // Start camera immediately after initialization
+        try {
+            const cameras = await Instascan.Camera.getCameras();
+            if (cameras.length > 0) {
+                await this.scanner.start(cameras[0]);
+            } else {
+                throw new Error('Камера не найдена.');
+            }
+        } catch (error) {
+            console.error('Ошибка при инициализации камеры:', error);
+            throw error;
+        }
     }
 
     // Запуск сканирования
-    start() {
-        Instascan.Camera.getCameras()
-            .then((cameras) => {
-                if (cameras.length > 0) {
-                    this.scanner.start(cameras[0]); // Используем первую доступную камеру
-                } else {
-                    throw new Error('Камера не найдена.');
-                }
-            })
-            .catch((error) => {
-                console.error('Ошибка при доступе к камере:', error);
-                throw error;
-            });
+    async start() {
+        if (!this.scanner) {
+            await this.init();
+            return;
+        }
+
+        try {
+            const cameras = await Instascan.Camera.getCameras();
+            if (cameras.length > 0) {
+                await this.scanner.start(cameras[0]); // Используем первую доступную камеру
+            } else {
+                throw new Error('Камера не найдена.');
+            }
+        } catch (error) {
+            console.error('Ошибка при доступе к камере:', error);
+            throw error;
+        }
     }
 
     // Остановка сканирования
