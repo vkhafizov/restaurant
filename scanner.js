@@ -1,4 +1,5 @@
 // scanner.js
+import Instascan from 'instascan';
 export default class Scanner {
     constructor(videoElement, onScan) {
         this.video = videoElement; // Элемент <video> для отображения камеры
