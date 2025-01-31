@@ -10,11 +10,23 @@
 <body>
     <div class="container">
         <h1>Сканер чеков</h1>
-        <input type="file" id="fileInput" accept="image/*">
+        <video id="preview" width="100%"></video>
         <button id="scanButton">Сканировать</button>
-        <div id="output"></div>
+        <div id="output">
+            <table id="productTable">
+                <thead>
+                    <tr>
+                        <th>Название продукта</th>
+                        <th>Цена</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Строки таблицы будут добавляться сюда -->
+                </tbody>
+            </table>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.4/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Instascan/1.0.0/instascan.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
